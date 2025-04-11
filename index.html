@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Generator</h1>
+        <p class="subtitle">Create custom QR codes with your favorite images!</p>
+        
+        <div class="input-section">
+            <div class="url-input">
+                <label for="url">Enter URL:</label>
+                <input type="url" id="url" placeholder="https://example.com" required>
+            </div>
+            
+            <div class="image-upload">
+                <label for="image">Upload Image (optional):</label>
+                <input type="file" id="image" accept="image/*">
+                <p class="file-info">Supports JPG, PNG, GIF</p>
+            </div>
+        </div>
+
+        <div class="qr-container">
+            <div id="qr-code"></div>
+        </div>
+
+        <div class="actions">
+            <button id="generate-btn">Generate QR Code</button>
+            <button id="download-btn">Download QR Code</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
