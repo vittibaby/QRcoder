@@ -132,15 +132,74 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
-            // Create a temporary link to download the image
-            const link = document.createElement('a');
-            link.download = 'qr-code.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            // Check if we're on iOS
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
+            if (isIOS) {
+                // For iOS devices, create a temporary image element
+                const img = new Image();
+                img.src = canvas.toDataURL('image/png');
+                
+                // Create a temporary link to trigger the iOS share sheet
+                const link = document.createElement('a');
+                link.href = img.src;
+                link.setAttribute('download', 'qr-code.png');
+                
+                // Create a temporary container for the image
+                const tempContainer = document.createElement('div');
+                tempContainer.style.position = 'absolute';
+                tempContainer.style.left = '-9999px';
+                tempContainer.appendChild(img);
+                document.body.appendChild(tempContainer);
+                
+                // Trigger the iOS share sheet
+                const shareData = {
+                    files: [new File([dataURLtoBlob(img.src)], 'qr-code.png', { type: 'image/png' })],
+                    title: 'Save QR Code',
+                    text: 'Save this QR code to your photo album'
+                };
+                
+                if (navigator.share) {
+                    navigator.share(shareData)
+                        .then(() => console.log('QR code shared successfully'))
+                        .catch((error) => {
+                            console.error('Error sharing QR code:', error);
+                            // Fallback to regular download if sharing fails
+                            link.click();
+                        });
+                } else {
+                    // Fallback to regular download if Web Share API is not available
+                    link.click();
+                }
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(tempContainer);
+                }, 1000);
+            } else {
+                // For non-iOS devices, use the regular download approach
+                const link = document.createElement('a');
+                link.download = 'qr-code.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
             console.log('QR code downloaded');
         } catch (error) {
             console.error('Error downloading QR code:', error);
             alert('Error downloading QR code. Please check the console for details.');
         }
     });
+
+    // Helper function to convert data URL to Blob
+    function dataURLtoBlob(dataURL) {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    }
 }); 
