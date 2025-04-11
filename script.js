@@ -136,46 +136,56 @@ document.addEventListener('DOMContentLoaded', () => {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             
             if (isIOS) {
-                // For iOS devices, create a temporary image element
-                const img = new Image();
-                img.src = canvas.toDataURL('image/png');
-                
-                // Create a temporary link to trigger the iOS share sheet
+                // For iOS devices, create a temporary link with download attribute
                 const link = document.createElement('a');
-                link.href = img.src;
-                link.setAttribute('download', 'qr-code.png');
+                const dataURL = canvas.toDataURL('image/png');
                 
-                // Create a temporary container for the image
+                // Create a temporary image element
+                const img = new Image();
+                img.src = dataURL;
+                
+                // Create a temporary container
                 const tempContainer = document.createElement('div');
                 tempContainer.style.position = 'absolute';
                 tempContainer.style.left = '-9999px';
                 tempContainer.appendChild(img);
                 document.body.appendChild(tempContainer);
                 
-                // Trigger the iOS share sheet
-                const shareData = {
-                    files: [new File([dataURLtoBlob(img.src)], 'qr-code.png', { type: 'image/png' })],
-                    title: 'Save QR Code',
-                    text: 'Save this QR code to your photo album'
-                };
-                
+                // Try to use the Web Share API first
                 if (navigator.share) {
-                    navigator.share(shareData)
-                        .then(() => console.log('QR code shared successfully'))
-                        .catch((error) => {
+                    // Convert data URL to blob
+                    fetch(dataURL)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const file = new File([blob], 'qr-code.png', { type: 'image/png' });
+                            return navigator.share({
+                                files: [file],
+                                title: 'QR Code',
+                                text: 'Save this QR code to your photo album'
+                            });
+                        })
+                        .then(() => {
+                            console.log('QR code shared successfully');
+                            // Clean up
+                            document.body.removeChild(tempContainer);
+                        })
+                        .catch(error => {
                             console.error('Error sharing QR code:', error);
-                            // Fallback to regular download if sharing fails
+                            // Fallback to regular download
+                            link.href = dataURL;
+                            link.download = 'qr-code.png';
                             link.click();
+                            // Clean up
+                            document.body.removeChild(tempContainer);
                         });
                 } else {
-                    // Fallback to regular download if Web Share API is not available
+                    // Fallback for browsers that don't support Web Share API
+                    link.href = dataURL;
+                    link.download = 'qr-code.png';
                     link.click();
-                }
-                
-                // Clean up
-                setTimeout(() => {
+                    // Clean up
                     document.body.removeChild(tempContainer);
-                }, 1000);
+                }
             } else {
                 // For non-iOS devices, use the regular download approach
                 const link = document.createElement('a');
@@ -183,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             }
-            console.log('QR code downloaded');
+            console.log('QR code download initiated');
         } catch (error) {
             console.error('Error downloading QR code:', error);
             alert('Error downloading QR code. Please check the console for details.');
